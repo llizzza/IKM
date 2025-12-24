@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Тип абонемента | Fitness Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        /*
+         * Стили страницы:
+         * body - фон страницы и шрифт
+         * .form-card - карточка формы с тенью, закруглениями и отступами
+         * .card-header - заголовок формы с градиентным фоном
+         * .form-label - цвет и жирность текста меток полей
+         * .form-control, .form-select - стили полей ввода и селектов
+         * .btn-save - кнопка сохранения тарифа с эффектом hover
+         */
+        body { background-color: #f0f8ff; font-family: 'Segoe UI', sans-serif; }
+        .form-card { background: white; border-radius: 30px; box-shadow: 0 15px 35px rgba(33,150,243,0.1); border: none; overflow: hidden; margin-top: 50px; }
+        .card-header { background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%); color: white; padding: 25px; border: none; }
+        .form-label { color: #1565c0; font-weight: 600; }
+        .form-control, .form-select { border-radius: 12px; border: 1px solid #bbdefb; padding: 12px; }
+        .btn-save { background: #2196f3; color: white; border-radius: 12px; border: none; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
+    </style>
+</head>
+<body class="container">
+<!--
+    Страница для создания или редактирования абонемента (SeasonTicket).
+    Используется с SeasonTicketController и моделью SeasonTicket.
+
+    Особенности:
+    - Заголовок динамически меняется:
+        * "➕ Новый тариф" если ticket.ticketNumber == null
+        * "✏️ Изменение тарифа" если редактируется существующий тариф
+    - Поля формы:
+        1. specialization - направление тренировок (select) с выбором из списка specRepo.findAll()
+        2. sessionsCount - количество занятий (input type="number", минимум 1)
+        3. price - стоимость абонемента (input type="number", шаг 0.01)
+    - Кнопка "Сохранить тариф" отправляет данные POST-запросом на /tickets/save
+    - Ссылка "Отмена" возвращает пользователя на список абонементов
+    - Все данные подставляются через Thymeleaf:
+        * th:field="*{...}" - связывает поля формы с объектом ticket
+        * th:each="s : ${specs}" - перебор доступных специализаций
+-->
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card form-card shadow">
+            <!-- Заголовок формы -->
+            <div class="card-header text-center">
+                <h3 class="mb-0" th:text="${ticket.ticketNumber == null} ? '➕ Новый тариф' : '✏️ Изменение тарифа'"></h3>
+            </div>
+            <div class="card-body p-4">
+                <form th:action="@{/tickets/save}" th:object="${ticket}" method="post">
+                    <input type="hidden" th:field="*{ticketNumber}">
+
+                    <!-- Выбор направления тренировок -->
+                    <div class="mb-3">
+                        <label class="form-label">Направление тренировок</label>
+                        <select th:field="*{specialization}" class="form-select" required>
+                            <option value="">-- Выберите направление --</option>
+                            <option th:each="s : ${specs}"
+                                    th:value="${s.specializationNumber}"
+                                    th:text="${s.name}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Количество занятий -->
+                    <div class="mb-3">
+                        <label class="form-label">Количество занятий</label>
+                        <input type="number" th:field="*{sessionsCount}" class="form-control" placeholder="10" min="1" required>
+                    </div>
+
+                    <!-- Стоимость абонемента -->
+                    <div class="mb-4">
+                        <label class="form-label">Стоимость (₽)</label>
+                        <input type="number" step="0.01" th:field="*{price}" class="form-control" placeholder="3000" required>
+                    </div>
+
+                    <!-- Кнопка сохранения -->
+                    <button type="submit" class="btn btn-save shadow-sm">Сохранить тариф</button>
+
+                    <!-- Ссылка отмены -->
+                    <div class="text-center mt-3">
+                        <a th:href="@{/tickets}" class="text-muted small text-decoration-none">↩ Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
