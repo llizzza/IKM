@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Оформление покупки | Fitness Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        /*
+         * Основные стили:
+         * body - фон страницы и шрифт
+         * .form-card - карточка формы с тенью и закруглениями
+         * .card-header - градиентный заголовок формы
+         * .form-label - цвет и жирность текста для меток полей
+         * .form-control, .form-select - стиль для полей ввода и селектов
+         * .btn-buy - кнопка оформления покупки с эффектом при наведении
+         */
+        body { background-color: #f0f8ff; font-family: 'Segoe UI', sans-serif; }
+        .form-card { background: white; border-radius: 30px; box-shadow: 0 15px 35px rgba(33,150,243,0.1); border: none; overflow: hidden; margin-top: 30px; }
+        .card-header { background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%); color: white; padding: 25px; border: none; }
+        .form-label { color: #1565c0; font-weight: 600; }
+        .form-control, .form-select { border-radius: 12px; border: 1px solid #bbdefb; padding: 12px; }
+        .btn-buy { background: #2196f3; color: white; border-radius: 12px; border: none; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-buy:hover { background: #1565c0; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="container py-4">
+<!--
+    Страница оформления покупки абонемента.
+    Используется с TicketPurchaseController и моделью TicketPurchase.
+
+    Особенности:
+    - Поля формы:
+        * client - выбор клиента, который покупает абонемент (select)
+        * seasonTicket - выбор типа абонемента/тарифа (select)
+        * purchaseDate - дата активации абонемента (input type="date")
+    - Данные подставляются динамически через Thymeleaf:
+        * th:each="c : ${clients}" - перебор всех клиентов
+        * th:each="t : ${tickets}" - перебор всех абонементов
+        * th:text="${t.specialization.name + ' (' + t.price + ' ₽)'}" - отображение названия и цены
+    - Кнопка "Продать абонемент" отправляет форму на /purchases/save методом POST
+    - Ссылка "Отмена" возвращает пользователя на список покупок
+-->
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card form-card shadow">
+            <!-- Заголовок формы -->
+            <div class="card-header text-center">
+                <h3 class="mb-0">💳 Оформление покупки</h3>
+            </div>
+            <div class="card-body p-4">
+                <form th:action="@{/purchases/save}" th:object="${purchase}" method="post">
+
+                    <!-- Выбор клиента -->
+                    <div class="mb-3">
+                        <label class="form-label">Выбор клиента</label>
+                        <select th:field="*{client}" class="form-select" required>
+                            <option th:each="c : ${clients}"
+                                    th:value="${c.clientNumber}"
+                                    th:text="${c.fullName}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Выбор абонемента -->
+                    <div class="mb-3">
+                        <label class="form-label">Тип абонемента</label>
+                        <select th:field="*{seasonTicket}" class="form-select" required>
+                            <option value="">-- Выберите тариф --</option>
+                            <option th:each="t : ${tickets}"
+                                    th:value="${t.ticketNumber}"
+                                    th:text="${t.specialization.name + ' (' + t.price + ' ₽)'}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Дата активации -->
+                    <div class="mb-4">
+                        <label class="form-label">Дата активации</label>
+                        <input type="date" th:field="*{purchaseDate}" class="form-control" required>
+                    </div>
+
+                    <!-- Кнопка оформления покупки -->
+                    <button type="submit" class="btn btn-buy shadow">Продать абонемент</button>
+
+                    <!-- Ссылка отмены -->
+                    <div class="text-center mt-3">
+                        <a th:href="@{/purchases}" class="text-muted small text-decoration-none">↩ Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

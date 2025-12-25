@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Запись на занятие | Fitness Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f0f8ff; font-family: 'Segoe UI', sans-serif; }
+        .form-card { background: white; border-radius: 30px; box-shadow: 0 15px 35px rgba(33,150,243,0.1); border: none; overflow: hidden; margin-top: 30px; }
+        .card-header { background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%); color: white; padding: 25px; border: none; }
+        .form-label { color: #1565c0; font-weight: 600; }
+        .form-control, .form-select { border-radius: 12px; border: 1px solid #bbdefb; padding: 12px; }
+        .btn-save { background: #2196f3; color: white; border-radius: 12px; border: none; padding: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-save:hover { background: #1565c0; transform: translateY(-2px); }
+        .alert-error { border-radius: 15px; background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 15px; margin-bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body class="container py-4">
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card form-card shadow">
+            <div class="card-header text-center">
+                <h3 class="mb-0">📝 Новая запись в журнал</h3>
+            </div>
+            <div class="card-body p-4">
+
+                <div th:if="${error}" class="alert-error">
+                    <span th:text="${error}"></span>
+                </div>
+
+                <form th:action="@{/visits/save}" th:object="${visit}" method="post" id="visitForm">
+
+                    <div class="mb-3">
+                        <label class="form-label">Клиент (Абонемент)</label>
+                        <select th:field="*{client}" class="form-select" id="clientSelect" required>
+                            <option value="" data-purchase="" data-spec="">-- Выберите клиента --</option>
+                            <option th:each="p : ${purchases}"
+                                    th:value="${p.client.clientNumber}"
+                                    th:attr="data-purchase=${p.purchaseDate}, data-spec=${p.seasonTicket.specialization.name}"
+                                    th:text="${p.client.fullName} + ' — [' + ${p.seasonTicket.specialization.name} + ']'">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Тренер</label>
+                        <select th:field="*{coach}" class="form-select" id="coachSelect" required>
+                            <option value="" data-spec="">-- Сначала выберите клиента --</option>
+                            <option th:each="coach : ${coaches}"
+                                    class="coach-option"
+                                    th:value="${coach.coachNumber}"
+                                    th:attr="data-spec=${coach.specialization.name}"
+                                    th:text="${coach.fullName} + ' (' + ${coach.specialization.name} + ')'">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Дата и время занятия</label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <input type="date" id="uiDate" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="uiHour" class="form-select" required>
+                                    <option th:each="h : ${#numbers.sequence(7, 22)}"
+                                            th:value="${h < 10 ? '0'+h : h}" th:text="${h < 10 ? '0'+h : h}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="uiMinute" class="form-select" required>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" th:field="*{visitDate}" id="finalVisitDate">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Статус визита</label>
+                        <select th:field="*{attended}" class="form-select">
+                            <option value="Пришел">✅ Пришел</option>
+                            <option value="Не пришел">❌ Не пришел</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-save shadow">Сохранить запись</button>
+                    <div class="text-center mt-3">
+                        <a th:href="@{/visits}" class="text-muted small text-decoration-none">↩ Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const clientSelect = document.getElementById('clientSelect');
+    const coachSelect = document.getElementById('coachSelect');
+    const coachOptions = document.querySelectorAll('.coach-option');
+    const dateInput = document.getElementById('uiDate');
+
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('max', today);
+
+    clientSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const purchaseDate = selectedOption.getAttribute('data-purchase');
+        const clientSpec = selectedOption.getAttribute('data-spec');
+
+        coachSelect.value = "";
+
+        coachOptions.forEach(option => {
+            const coachSpec = option.getAttribute('data-spec');
+            if (!clientSpec || coachSpec === clientSpec) {
+                option.style.display = 'block';
+                option.disabled = false;
+            } else {
+                option.style.display = 'none';
+                option.disabled = true;
+            }
+        });
+
+        if (purchaseDate) {
+            dateInput.setAttribute('min', purchaseDate);
+            if (dateInput.value && dateInput.value < purchaseDate) {
+                dateInput.value = purchaseDate;
+            }
+        } else {
+            dateInput.removeAttribute('min');
+        }
+    });
+
+    document.getElementById('visitForm').onsubmit = function() {
+        const date = document.getElementById('uiDate').value;
+        const hour = document.getElementById('uiHour').value;
+        const min = document.getElementById('uiMinute').value;
+        if(date && hour && min) {
+            document.getElementById('finalVisitDate').value = date + 'T' + hour + ':' + min;
+        }
+    };
+</script>
+</body>
+</html>
